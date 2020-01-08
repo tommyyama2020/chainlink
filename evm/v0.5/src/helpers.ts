@@ -47,7 +47,7 @@ export interface ServiceAgreement {
 }
 
 // duplicated in evm/v0.5/test/support/helpers.ts
-export interface OracleSignatures {
+export interface OracleSignature {
   vs: ethers.utils.BigNumberish[] // uint8[]
   rs: string[] // bytes32[]
   ss: string[] // bytes32[]
@@ -511,9 +511,37 @@ export function encodeServiceAgreement(sa: ServiceAgreement) {
   )
 }
 
-export function encodeOracleSignatures(os: OracleSignatures) {
+export function encodeOracleSignatures(os: OracleSignature) {
   const osValues = [os.vs, os.rs, os.ss]
   return ethers.utils.defaultAbiCoder.encode(ORACLE_SIGNATURES_TYPES, osValues)
+}
+
+export async function computeOracleSignature(
+  agreement: ServiceAgreement,
+  oracle: ethers.Wallet,
+): Promise<OracleSignature> {
+  const said = generateSAID(agreement)
+  const oracleSignatures: OracleSignature[] = []
+
+  for (let i = 0; i < agreement.oracles.length; i++) {
+    const oracleSignature = await oracle.signMessage(
+      ethers.utils.arrayify(said),
+    )
+
+    const sig = ethers.utils.splitSignature(oracleSignature)
+    if (!sig.v) {
+      throw Error(`Could not extract v from signature`)
+    }
+    const convertedOracleSignature: OracleSignature = {
+      vs: [sig.v],
+      rs: [sig.r],
+      ss: [sig.s],
+    }
+    oracleSignatures.push(convertedOracleSignature)
+  }
+
+  // TODO: this should be an array!
+  return oracleSignatures[0]
 }
 
 /**
@@ -544,4 +572,13 @@ export function pubkeyToAddress(pubkey: ethers.utils.BigNumber[]) {
     .replace(/0x/gi, '')}`
 
   return ethers.utils.computeAddress(concatResult)
+}
+
+/**
+ * Calculate six months from the current date in seconds
+ */
+export function sixMonthsFromNow(): ethers.utils.BigNumber {
+  return ethers.utils.bigNumberify(
+    Math.round(Date.now() / 1000.0) + 6 * 30 * 24 * 60 * 60,
+  )
 }
