@@ -1,5 +1,5 @@
-import * as h from './support/helpers'
-import { assertBigNum } from './support/matchers'
+import * as h from '../test/support/helpers'
+import { assertBigNum } from '../test/support/matchers'
 const Coordinator = artifacts.require('Coordinator.sol')
 const MeanAggregator = artifacts.require('MeanAggregator.sol')
 const ServiceAgreementConsumer = artifacts.require(
