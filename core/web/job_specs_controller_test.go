@@ -295,6 +295,51 @@ func TestJobSpecsController_Create_NonExistentTaskJob(t *testing.T) {
 	assert.Equal(t, expected, strings.TrimSpace(body))
 }
 
+func TestJobSpecsController_Create_FluxMonitor_disabled(t *testing.T) {
+	t.Parallel()
+
+	config := cltest.NewTestConfig(t)
+	config.Set("CHAINLINK_DEV", "FALSE")
+	config.Set("FEATURE_FLUX_MONITOR", "FALSE")
+
+	app, cleanup := cltest.NewApplicationWithConfig(t, config)
+	defer cleanup()
+
+	require.NoError(t, app.Start())
+
+	client := app.NewHTTPClient()
+
+	jsonStr := cltest.MustReadFile(t, "testdata/flux_monitor_job.json")
+	resp, cleanup := client.Post("/v2/specs", bytes.NewBuffer(jsonStr))
+	defer cleanup()
+
+	require.Equal(t, http.StatusText(http.StatusBadRequest), http.StatusText(resp.StatusCode))
+	expected := `{"errors":[{"detail":"The Flux Monitor feature is disabled by configuration"}]}`
+	body := string(cltest.ParseResponseBody(t, resp))
+	assert.Equal(t, expected, strings.TrimSpace(body))
+}
+
+func TestJobSpecsController_Create_FluxMonitor_enabled(t *testing.T) {
+	t.Parallel()
+
+	config := cltest.NewTestConfig(t)
+	config.Set("CHAINLINK_DEV", "FALSE")
+	config.Set("FEATURE_FLUX_MONITOR", "TRUE")
+
+	app, cleanup := cltest.NewApplicationWithConfig(t, config)
+	defer cleanup()
+
+	require.NoError(t, app.Start())
+
+	client := app.NewHTTPClient()
+
+	jsonStr := cltest.MustReadFile(t, "testdata/flux_monitor_job.json")
+	resp, cleanup := client.Post("/v2/specs", bytes.NewBuffer(jsonStr))
+	defer cleanup()
+
+	require.Equal(t, http.StatusText(http.StatusOK), http.StatusText(resp.StatusCode))
+}
+
 func TestJobSpecsController_Create_InvalidJob(t *testing.T) {
 	t.Parallel()
 	app, cleanup := cltest.NewApplication(t)
