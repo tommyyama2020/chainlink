@@ -20,7 +20,7 @@ import (
 	"chainlink/core/store/orm"
 	"chainlink/core/store/presenters"
 
-	"github.com/chenjiandongx/ginprom"
+	"github.com/Depado/ginprom"
 	helmet "github.com/danielkov/gin-helmet"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/expvar"
@@ -86,7 +86,7 @@ func Router(app services.Application) *gin.Engine {
 		gin.Recovery(),
 		cors,
 		secureMiddleware(config),
-		ginprom.PromMiddleware(&ginprom.PromOpts{}),
+		ginprom.New(ginprom.Engine(engine), ginprom.Namespace("service")),
 	)
 	engine.Use(helmet.Default())
 
