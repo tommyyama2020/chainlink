@@ -28,7 +28,6 @@ import (
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/gobuffalo/packr"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/ulule/limiter"
 	mgin "github.com/ulule/limiter/drivers/middleware/gin"
 	"github.com/ulule/limiter/drivers/store/memory"
@@ -86,7 +85,7 @@ func Router(app services.Application) *gin.Engine {
 		gin.Recovery(),
 		cors,
 		secureMiddleware(config),
-		ginprom.New(ginprom.Engine(engine), ginprom.Namespace("service")),
+		ginprom.New(ginprom.Engine(engine), ginprom.Namespace("service")).Instrument(),
 	)
 	engine.Use(helmet.Default())
 
@@ -150,8 +149,6 @@ func secureMiddleware(config orm.ConfigReader) gin.HandlerFunc {
 	return secureFunc
 }
 func metricRoutes(app services.Application, r *gin.RouterGroup) {
-	r.GET("/metrics", ginprom.PromHandler(promhttp.Handler()))
-
 	group := r.Group("/debug", RequireAuth(app.GetStore(), AuthenticateBySession))
 	group.GET("/vars", expvar.Handler())
 
