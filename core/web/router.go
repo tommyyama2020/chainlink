@@ -34,8 +34,11 @@ import (
 	"github.com/unrolled/secure"
 )
 
+var p *ginprom.Prometheus
+
 func init() {
 	gin.DebugPrintRouteFunc = printRoutes
+	p = ginprom.New(ginprom.Namespace("service"))
 }
 
 func printRoutes(httpMethod, absolutePath, handlerName string, nuHandlers int) {
@@ -79,13 +82,14 @@ func Router(app services.Application) *gin.Engine {
 	sessionStore.Options(config.SessionOptions())
 	cors := uiCorsHandler(config)
 
+	p.Use(engine)
 	engine.Use(
 		limits.RequestSizeLimiter(config.DefaultHTTPLimit()),
 		loggerFunc(),
 		gin.Recovery(),
 		cors,
 		secureMiddleware(config),
-		ginprom.New(ginprom.Engine(engine), ginprom.Namespace("service")).Instrument(),
+		p.Instrument(),
 	)
 	engine.Use(helmet.Default())
 
