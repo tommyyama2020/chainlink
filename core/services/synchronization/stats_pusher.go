@@ -224,7 +224,9 @@ func createSyncEventWithStatsPusher(sp *StatsPusher, orm *orm.ORM) func(*gorm.Sc
 		event := models.SyncEvent{
 			Body: string(bodyBytes),
 		}
-		err = scope.DB().Save(&event).Error
+		err = orm.RawDB(func(db *gorm.DB) error {
+			return db.Create(&event).Error
+		})
 		if err != nil {
 			scope.Err(errors.Wrap(err, "createSyncEvent#Save failed"))
 			return
